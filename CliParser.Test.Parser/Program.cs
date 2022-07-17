@@ -6,11 +6,7 @@
     {
         public static void Main(string[] args)
         {
-            var intListParser = ParseList.Of<int>().CommaSeparated();
-            var additionalParsers = AdditionalParsers.Builder()
-                .ForFieldNamed(nameof(Person.Numbers), intListParser)
-                .ForType(typeof(List<int>), intListParser)
-                .Build();
+            var additionalParsers = AdditionalParsers.ForType(typeof(List<int>), ListParser.Of<int>().CommaSeparated());
 
             var parser = new CliParser();
             if (!parser.TryParseArgs(out Person person, args, additionalParsers))
@@ -40,7 +36,7 @@
         [Argument("--numbers", shortName: "-n", helpText: "A comma delimited list of numbers.")]
         public List<int> Numbers = new List<int>();
 
-        public static object ParseReferences(object? target, string value) => ParseList.Of<string>().CommaSeparated().Invoke(target, value);
+        public static object ParseReferences(object? target, string value) => ListParser.Of<string>().CommaSeparated().Invoke(target, value);
 
         public override string ToString() => $"Name: {Name}, Number: {Number}, Position: {Position}, Names: {string.Join(", ", Names)}, Numbers: {string.Join(", ", Numbers.Select(x => x.ToString()))}";
     }

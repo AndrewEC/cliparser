@@ -1,10 +1,10 @@
 namespace CliParsing.Parsers
 {
 
-    public class ParseCollectionBuilder<T>
+    public class CollectionParserBuilder<T>
     {
         private readonly Func<IEnumerable<T>, object> func;
-        public ParseCollectionBuilder(Func<IEnumerable<T>, object> func)
+        public CollectionParserBuilder(Func<IEnumerable<T>, object> func)
         {
             this.func = func;
         }
@@ -13,14 +13,14 @@ namespace CliParsing.Parsers
         public Func<object?, string, object> CommaSeparated() => SeparatedBy(",");
     }
 
-    public class ParseList
+    public class ListParser
     {
-        public static ParseCollectionBuilder<T> Of<T>() => new ParseCollectionBuilder<T>((enumerable) => enumerable.ToList());
+        public static CollectionParserBuilder<T> Of<T>() => new CollectionParserBuilder<T>((enumerable) => enumerable.ToList());
     }
 
-    public class ParseArray
+    public class ArrayParser
     {
-        public static ParseCollectionBuilder<T> Of<T>() => new ParseCollectionBuilder<T>((enumerable) => enumerable.ToArray());
+        public static CollectionParserBuilder<T> Of<T>() => new CollectionParserBuilder<T>((enumerable) => enumerable.ToArray());
     }
 
     public static class CollectionParsers
@@ -29,7 +29,7 @@ namespace CliParsing.Parsers
         {
             Type listItemType = typeof(T);
             var valueParser = DefaultParsers.DefaultParserFor(listItemType)
-                ?? throw new ParseException($"Could not create parser to parse array of [{listItemType.Name}]. No parser for type [{listItemType.Name}] could be found.");
+                ?? throw new ParseException($"Could not create parser to parse collection of [{listItemType.Name}]. No parser for type [{listItemType.Name}] could be found.");
             return (instance, value) => processEnumerable.Invoke(value.Split(splitter).Select(x => (T) valueParser.Invoke(null, x)));
         }
     }

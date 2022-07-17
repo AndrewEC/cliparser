@@ -4,14 +4,18 @@ namespace CliParsing.Commands
     using System.Collections.Immutable;
     using System.Linq;
 
-    public abstract class BaseCommandGroup : ICommand
+    public interface ICommandGroup : ICommand
+    {
+        public ICommand[] SubCommands();
+    }
+
+    public abstract class BaseCommandGroup : ICommandGroup
     {
         public abstract ICommand[] SubCommands();
 
         public void Execute(CliProgram program, string[] args)
         {
-            ICommand[] subCommands = SubCommands();
-            ValidateCommandNames(subCommands);
+            ICommand[] subCommands = GetSubCommands();
 
             if (args.Length == 0)
             {
@@ -19,6 +23,32 @@ namespace CliParsing.Commands
                 throw new CommandException($"No command found. Expected to one of: [{expectedList}]");
             }
 
+            string nextCommandName = GetNameOfNextCommand(subCommands, args);
+            ICommand? nextCommand = GetNextCommand(subCommands, nextCommandName);
+
+            string[] nextArgs = args.Skip(1).ToArray();
+            if (nextCommand == null)
+            {
+                string expectedList = FormExpectedCommandNameList(subCommands);
+                throw new CommandException($"Could not find command with name [{nextCommandName}] to execute. Expected command to be one of: [{expectedList}]");
+            }
+
+            nextCommand.Execute(program, nextArgs);
+        }
+
+        private ICommand GetNextCommand(ICommand[] subCommands, string nextCommandName)
+        {
+            ICommand? nextCommand = subCommands.Where(command => command.GetName().ToLowerInvariant() == nextCommandName).FirstOrDefault();
+            if (nextCommand == null)
+            {
+                string expectedList = FormExpectedCommandNameList(subCommands);
+                throw new CommandException($"Could not find command with name [{nextCommandName}] to execute. Expected command to be one of: [{expectedList}]");
+            }
+            return nextCommand!;
+        }
+
+        private string GetNameOfNextCommand(ICommand[] subCommands, string[] args)
+        {
             string nextCommandName = args[0].ToLowerInvariant();
             if (nextCommandName == "-h" || nextCommandName == "--help")
             {
@@ -26,15 +56,20 @@ namespace CliParsing.Commands
                 Console.WriteLine($"Specify one of the following subcommands to execute: [{expectedList}]");
                 System.Environment.Exit(0);
             }
+            return nextCommandName;
+        }
 
-            string[] nextArgs = args.Skip(1).ToArray();
-            ICommand? nextCommand = subCommands.Where(command => command.GetName().ToLowerInvariant() == nextCommandName).FirstOrDefault();
-            if (nextCommand == null)
+        private ICommand[] GetSubCommands()
+        {
+            ICommand[] subCommands = SubCommands();
+            if (subCommands.Length == 0)
             {
-                string expectedList = FormExpectedCommandNameList(subCommands);
-                throw new CommandException($"Could not find command with name [{nextCommandName}] to execute. Expected command to be one of: [{expectedList}]");
+                throw new ParseException("The command group could not be executed because the group does not contain any commands.");
             }
-            nextCommand.Execute(program, nextArgs);
+
+            ValidateCommandNames(subCommands);
+
+            return subCommands;
         }
 
         private void ValidateCommandNames(ICommand[] commands)
@@ -61,7 +96,7 @@ namespace CliParsing.Commands
         private readonly ImmutableArray<ICommand> commands;
         private readonly string name;
 
-        public GenericCommandGroup(string? name, ImmutableArray<ICommand> commands)
+        public GenericCommandGroup(ImmutableArray<ICommand> commands, string? name = null)
         {
             this.commands = commands;
             this.name = name ?? GetType().Name.ToLowerInvariant();
@@ -74,7 +109,7 @@ namespace CliParsing.Commands
 
     public static partial class Command
     {
-        public static ICommand Group(params ICommand[] commands) => new GenericCommandGroup(null, commands.ToImmutableArray());
-        public static ICommand Group(string name, params ICommand[] commands) => new GenericCommandGroup(name, commands.ToImmutableArray());
+        public static ICommand Group(params ICommand[] commands) => new GenericCommandGroup(commands.ToImmutableArray());
+        public static ICommand Group(string name, params ICommand[] commands) => new GenericCommandGroup(commands.ToImmutableArray(), name);
     }
 }

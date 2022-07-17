@@ -65,11 +65,8 @@ namespace CliParsing
 
         public static Func<object?, string, object> CreateParserFromMethod(Type modelType, string methodName)
         {
-            MethodInfo? method = modelType.GetMethods().Where(info => info.Name == methodName).FirstOrDefault();
-            if (method == null)
-            {
-                throw new ParseException($"Could not locate parser. No method with the name [{methodName}] could be found on the type [{modelType.FullName}] .");
-            }
+            MethodInfo? method = modelType.GetMethods().Where(info => info.Name == methodName).FirstOrDefault()
+                ?? throw new ParseException($"Could not locate parser. No method with the name [{methodName}] could be found on the type [{modelType.FullName}] .");
             return (instance, value) => method.Invoke(null, new []{ instance, value });
         }
     }
