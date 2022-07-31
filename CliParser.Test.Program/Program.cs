@@ -44,7 +44,7 @@
     internal sealed class PersonName
     {
         [Argument("name", position: 1, helpText: "The name of the person.")]
-        public string Name = "";
+        public string Name { get; set; } = "";
     }
 
     [ProgramDescriptor("Add two number together.")]

@@ -64,7 +64,7 @@ namespace CliParsing.Commands
             ICommand[] subCommands = SubCommands();
             if (subCommands.Length == 0)
             {
-                throw new ParseException("The command group could not be executed because the group does not contain any commands.");
+                throw new ParseException($"The command group [{GetName()}] could not be executed because the group does not contain any commands.");
             }
 
             ValidateCommandNames(subCommands);

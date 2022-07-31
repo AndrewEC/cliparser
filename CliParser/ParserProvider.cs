@@ -13,6 +13,8 @@ namespace CliParsing
     {
         private readonly Dictionary<Func<ArgumentAttribute, MemberInfo, bool>, Func<object?, string, object>> parsers = new Dictionary<Func<ArgumentAttribute, MemberInfo, bool>, Func<object?, string, object>>();
 
+        public ParserBuilder ForType<T>(Func<object?, string, object> parser) => ForType(typeof(T), parser);
+
         public ParserBuilder ForType(Type type, Func<object?, string, object> parser)
         {
             var predicate = (ArgumentAttribute attribute, MemberInfo member) => TypeHelper.DeclaredType(member) == type;
@@ -51,6 +53,8 @@ namespace CliParsing
         public static ParserBuilder Builder() => new ParserBuilder();
 
         public static IParserProvider ForFieldName(string fieldNamed, Func<object?, string, object> parser) => Builder().ForFieldNamed(fieldNamed, parser).Build();
+
+        public static IParserProvider ForType<T>(Func<object?, string, object> parser) => ForType(typeof(T), parser);
 
         public static IParserProvider ForType(Type type, Func<object?, string, object> parser) => Builder().ForType(type, parser).Build();
     }
